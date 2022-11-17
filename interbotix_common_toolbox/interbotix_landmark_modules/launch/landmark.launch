@@ -2,7 +2,7 @@
 
     <!-- AprilTag Args & Params-->
     <arg name="apriltag_ns"                     default="apriltag"/>
-    <arg name="camera_color_topic"              default="/camera/color/image_raw"/>
+    <arg name="camera_color_topic"              default="/camera/color/image_rect_raw"/>
     <arg name="camera_info_topic"               default="/camera/color/camera_info"/>
 
     <!-- RealSense Args & Params -->

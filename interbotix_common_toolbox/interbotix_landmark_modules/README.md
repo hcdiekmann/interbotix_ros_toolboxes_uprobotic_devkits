@@ -38,7 +38,7 @@ Short descriptions for each launch file's arguements are below...
 | Argument | Description | Default Value |
 | -------- | ----------- | :-----------: |
 | apriltag_ns | name-space where the AprilTag related nodes and parameters are located | apriltag |
-| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_raw |
+| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_rect_raw |
 | camera_info_topic | the absolute ROS topic name to subscribe to the camera color info | camera/color/camera_info |
 | use_cam | whether or not to launch the realsense2_camera package | true |
 

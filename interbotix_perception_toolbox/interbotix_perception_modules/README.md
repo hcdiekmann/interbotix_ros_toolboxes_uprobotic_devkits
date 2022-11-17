@@ -79,7 +79,7 @@ Short descriptions for each launch file's arguments are below...
 | standalone_tags | individual AprilTags the algorithm should be looking for | refer to [tags.yaml](config/tags.yaml) |
 | camera_frame | the camera frame in which the AprilTag will be detected | camera_color_optical_frame |
 | apriltag_ns | name-space where the AprilTag related nodes and parameters are located | apriltag |
-| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_raw |
+| camera_color_topic | the absolute ROS topic name to subscribe to color images | camera/color/image_rect_raw |
 | camera_info_topic | the absolute ROS topic name to subscribe to the camera color info | camera/color/camera_info |
 
 #### armtag.launch

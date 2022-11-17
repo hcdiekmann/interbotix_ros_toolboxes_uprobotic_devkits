@@ -51,7 +51,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'camera_color_topic',
-            default_value='/camera/color/image_raw',
+            default_value='/camera/color/image_rect_raw',
             description='topic in which the picture_snapper node can find the raw image message.',
         ),
         DeclareLaunchArgument(

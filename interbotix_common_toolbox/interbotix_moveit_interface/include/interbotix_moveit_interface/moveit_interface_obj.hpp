@@ -37,6 +37,7 @@
 
 #include "moveit/move_group_interface/move_group_interface.h"
 #include "moveit/planning_scene_interface/planning_scene_interface.h"
+#include <moveit_msgs/msg/planning_scene.hpp>
 #include "moveit_msgs/msg/display_robot_state.hpp"
 #include "moveit_msgs/msg/display_trajectory.hpp"
 #include "moveit_msgs/msg/attached_collision_object.hpp"
@@ -45,6 +46,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include <moveit_msgs/srv/apply_planning_scene.hpp>
 
 #include "interbotix_moveit_interface_msgs/srv/move_it_plan.hpp"
 
@@ -59,6 +61,7 @@ using Empty = std_srvs::srv::Empty;
 inline static const std::string PLANNING_GROUP = "interbotix_arm";
 inline static const std::string EE_LINK = "ee_gripper_link";
 inline static const std::string VT_FRAME_NAME = "ee_pose";
+inline static const std::string MOVEIT_NAMESPACE = "interbotix"
 
 
 class InterbotixMoveItInterface
@@ -128,6 +131,32 @@ public:
   /// @param factor a double between 0 and 1.
   void moveit_scale_ee_velocity(const double factor);
 
+  /// @brief 
+  /// @param collision_object 
+  /// @param object_id 
+  /// @param dimensions 
+  /// @return 
+  bool moveit_add_collision_object(
+    const std::string object_id,
+    const std::vector<float> dimensions,
+    const std::vector<double> object_pose);
+
+  /// @brief 
+  bool moveit_remove_collision_object(const std::string object_id);
+
+  /// @brief 
+  /// @param object_id 
+  /// @param touch_links 
+  /// @return 
+  bool moveit_attach_object_to_ee(
+    const std::string object_id,
+    const std::vector<std::string> touch_links);
+
+  /// @brief 
+  bool moveit_detach_object_from_ee(
+    const std::string object_id,
+    bool reintroduce = true);
+
 private:
   // ROS Node
   rclcpp::Node::SharedPtr node_;
@@ -153,8 +182,8 @@ private:
   // Plan object that holds the calculated trajectory
   moveit::planning_interface::MoveGroupInterface::Plan saved_plan;
 
-  // Not applied in this demo but would be used to add objects to the world
-  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+  // Holds the list of collision objects in the planning scene 
+  const std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
 
   /// @brief ROS Service callback to plan or execute a desired end-effector pose, position, or
   ///   orientation
@@ -173,6 +202,7 @@ private:
     std::shared_ptr<rmw_request_id_t> request_header,
     std::shared_ptr<Empty::Request> req,
     std::shared_ptr<Empty::Response> res);
+  
 };
 
 }  // namespace interbotix

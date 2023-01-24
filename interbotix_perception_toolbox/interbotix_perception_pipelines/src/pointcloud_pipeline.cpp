@@ -390,12 +390,12 @@ int main(int argc, char ** argv)
   node_->declare_parameter<bool>("enable_pipeline", true);
   node_->declare_parameter<std::string>("cloud_topic", "/camera/depth/color/points");
   node_->declare_parameter<float>("voxel_leaf_size", 0.004);
-  node_->declare_parameter<float>("x_filter_min", -0.25);
-  node_->declare_parameter<float>("y_filter_min", -0.25);
-  node_->declare_parameter<float>("z_filter_min", 0.25);
-  node_->declare_parameter<float>("x_filter_max", 0.25);
-  node_->declare_parameter<float>("y_filter_max", 0.25);
-  node_->declare_parameter<float>("z_filter_max", 0.75);
+  node_->declare_parameter<float>("x_filter_min", -0.20);
+  node_->declare_parameter<float>("y_filter_min", -0.20);
+  node_->declare_parameter<float>("z_filter_min", 0.05);
+  node_->declare_parameter<float>("x_filter_max", 0.20);
+  node_->declare_parameter<float>("y_filter_max", 0.20);
+  node_->declare_parameter<float>("z_filter_max", 0.40);
   node_->declare_parameter<int>("plane_max_iter", 50);
   node_->declare_parameter<float>("plane_dist_thresh", 0.005);
   node_->declare_parameter<float>("ror_radius_search", 0.01);

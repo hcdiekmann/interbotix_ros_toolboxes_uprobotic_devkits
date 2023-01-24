@@ -502,8 +502,11 @@ class InterbotixPointCloudInterface(Node):
             return False, []
         cluster_frame: str = root_clusters[0].frame_id
 
+        avg_clusters = []
         # Calculate the average for each cluster based on 'num_samples' samples
-        avg_clusters = [ClusterInfo()] * num_clusters
+        for i in range(num_clusters):
+            avg_clusters.append(ClusterInfo())
+            
         for _ in range(num_samples):
             clusters: List[ClusterInfo] = self.srv_get_cluster_positions.call_async(
                 ClusterInfoArray.Request()

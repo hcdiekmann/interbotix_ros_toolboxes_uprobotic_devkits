@@ -249,7 +249,7 @@ void pointcloud_pipeline()
   ec.setInputCloud(cloud_no_noise);
   ec.extract(cluster_indices);
 
-  // RCLCPP_INFO(LOGGER, "Found %d clusters.", cluster_indices.size());
+  //RCLCPP_INFO(LOGGER, "Found %ld clusters.", cluster_indices.size());
 
   int j = 0;
   cluster_info_vector.clear();

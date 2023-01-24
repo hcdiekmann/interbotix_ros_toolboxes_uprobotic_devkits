@@ -31,6 +31,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace interbotix
 {
@@ -49,6 +50,10 @@ InterbotixMoveItInterface::InterbotixMoveItInterface(
     node_,
     PLANNING_GROUP);
   joint_model_group = move_group->getCurrentState(2.0)->getJointModelGroup(PLANNING_GROUP);
+
+  planning_scene = std::make_shared<moveit::planning_interface::PlanningSceneInterface>(
+    MOVEIT_NAMESPACE, // Namespace in which all MoveIt related topics and services are discovered
+    true);            // wait for services
 
   srv_moveit_plan = node_->create_service<MoveItPlan>(
     "moveit_plan",
@@ -332,5 +337,141 @@ bool InterbotixMoveItInterface::clear_markers(
   RCLCPP_DEBUG(node_->get_logger(), "Cleared markers.");
   return true;
 }
+
+bool InterbotixMoveItInterface::moveit_add_collision_object(
+  const std::string object_id,
+  const std::vector<float> dimensions,
+  const std::vector<double> object_pose)
+{
+  moveit_msgs::msg::CollisionObject collision_object;
+  collision_object.id = object_id;
+  collision_object.header.frame_id = move_group->getPlanningFrame();
+  RCLCPP_INFO(node_->get_logger(), "New collision object created with id: " + object_id.c_str());
+
+  // define objects size and shape
+  shape_msgs::msg::SolidPrimitive primitive;
+  primitive.type = primitive.BOX;
+  primitive.dimensions.resize(3); // TODO: adjust 
+  primitive.dimensions[primitive.BOX_X] = dimensions[0];
+  primitive.dimensions[primitive.BOX_Y] = dimensions[1];
+  primitive.dimensions[primitive.BOX_Z] = dimensions[2];
+
+  // set the position and orientation of object
+  geometry_msgs::msg::Pose co_pose;
+  co_pose.position.x = object_pose[0];
+  co_pose.position.y = object_pose[1];
+  co_pose.position.z = object_pose[2];
+  co_pose.orientation.x = object_pose[3];
+  co_pose.orientation.y = object_pose[4];
+  co_pose.orientation.z = object_pose[5];
+  co_pose.orientation.w = object_pose[6];
+
+  collision_object.primitives.push_back(primitive);
+  collision_object.primitive_poses.push_back(co_pose);
+  collision_object.operation = collision_object.ADD;
+
+  // add collision object to collective list of objects
+  collision_objects.push_back(collision_object);
+
+  // the planning scene will update automatically through the diff_publisher 
+  planning_scene.addCollisionObjects(collision_objects);
+  RCLCPP_INFO(node_->get_logger(), "Adding new object into the world");
+  return true;
+}
+
+bool InterbotixMoveItInterface::moveit_remove_collision_object(
+  const std::string object_id
+)
+{
+  const std::vector<std::string> id_of_object_to_remove;
+  id_of_object_to_remove.push_back(object_id);
+  std::map<std::string, moveit_msgs::CollisionObject> found_objects = planning_scene_interface.getObjects(id_of_object_to_remove);
+  
+  if(found_objects.find(object_id) != found_objects.end()) {
+    moveit_msgs::msg::CollisionObject object_to_remove = found_objects[object_id]; // OR found_objects.find(object_id).second; //to get value from map  
+    
+    auto it = std::find(collision_objects.begin(), collision_objects.end(), object_to_remove);
+    if(it != collision_objects.end()) {
+      collision_objects.erase(it); // erase object from private list
+    }
+    planning_scene.removeCollisionObjects(id_of_object_to_remove);
+    RCLCPP_INFO(node_->get_logger(), "Removing object from the world");
+    return true;
+  }
+  RCLCPP_INFO(node_->get_logger(), "Could not find object with id: " + object_id.c_str());
+  return false;
+}
+
+bool InterbotixMoveItInterface::moveit_attach_object_to_ee(
+  const std::string object_id,
+  const std::vector<std::string> touch_links)
+{
+  const std::vector<std::string> id_of_object_to_attach;
+  id_of_object_to_attach.push_back(object_id);
+  std::map<std::string, moveit_msgs::CollisionObject> found_objects = planning_scene.getObjects(id_of_object_to_attach);
+  
+  if(found_objects.find(object_id) != found_objects.end()) {
+    RCLCPP_INFO(node_->get_logger(), "Removing object from world, before attaching it to end effector.");
+
+    if(moveit_remove_collision_object(object_id)){
+      moveit_msgs::msg::AttachedCollisionObject object_to_attach;
+      object_to_attach.object = found_objects[object_id]; // OR found_objects.find(object_id).second; //to get value from map
+      object_to_attach.link_name = move_group.getEndEffectorLink();
+      object_to_attach.touch_links = touch_links; // The set of links that the attached object is allowed to touch
+      object_to_attach.object.operation = attached_object.object.ADD;
+
+      move_group.attachObject(object_to_attach.object.id, object_to_attach.link_name, touch_links);
+      planning_scene.applyAttachedCollisionObject(object_to_attach);
+      RCLCPP_INFO(node_->get_logger(), "Attaching object to end effector.");
+      return true;
+    }
+    else {
+      RCLCPP_INFO(node_->get_logger(), "Failed to remove object from the world.");
+      return false;
+    }
+  } 
+  else {
+    RCLCPP_INFO(node_->get_logger(), "The object you are trying to add to the end effector does not exist.");
+  }
+  return false;
+}
+
+bool InterbotixMoveItInterface::moveit_detach_object_from_ee(
+  const std::string object_id
+  bool reintroduce = true)
+{
+  const std::vector<std::string> id_of_object_to_detach;
+  id_of_object_to_detach.push_back(object_id);
+
+  std::map<std::string, moveit_msgs::AttachedCollisionObject> attached_objects;
+  attached_objects = planning_scene.getAttachedObjects(id_of_object_to_detach);
+  
+  RCLCPP_INFO(node_->get_logger(), "Detaching the object from the end effector");
+  moveit_msgs::msg::CollisionObject collision_object;
+  collision_object = attached_objects[object_id].object;
+  if (move_group.detachObject(collision_object.id)){
+    if(reintroduce){
+      RCLCPP_INFO(node_->get_logger(), "Reintroducing detached object into the world.");
+      collision_object.operation = collision_object.ADD;
+      // update private list of objects
+      collision_objects.push_back(collision_object);
+      return  applyCollisionObject(collision_object);
+    }
+    else{
+      RCLCPP_INFO(node_->get_logger(), "Removing detached object from the scene");
+      moveit_msgs::msg::AttachedCollisionObject detach_object;
+      detach_object = attached_objects[object_id];
+      detach_object.object.operation = attached_object.object.REMOVE; 
+      return applyAttachedCollisionObject(detach_object);
+    }
+  }
+  else{
+    RCLCPP_INFO(node_->get_logger(), "The specified object to detach could not be identified.");
+    return false;
+  }
+
+
+}
+
 
 }  // namespace interbotix

@@ -501,7 +501,9 @@ class InterbotixPointCloudInterface(Node):
             self.node_inf.get_logger().warning('No clusters found...')
             return False, []
         cluster_frame: str = root_clusters[0].frame_id
-
+        self.node_inf.get_logger().info(
+                    f'Cluster frame: {cluster_frame}'
+                )
         avg_clusters = []
         # Calculate the average for each cluster based on 'num_samples' samples
         for i in range(num_clusters):
@@ -514,7 +516,7 @@ class InterbotixPointCloudInterface(Node):
             self.spin_until_future_complete(future_get_cluster_pos)
             clusters: List[ClusterInfo] = future_get_cluster_pos.result().clusters
             if len(clusters) != num_clusters:
-                self.get_logger().warning(
+                self.node_inf.get_logger().warning(
                     f'Found {len(clusters)} clusters instead of {num_clusters} clusters...'
                 )
                 return False, []

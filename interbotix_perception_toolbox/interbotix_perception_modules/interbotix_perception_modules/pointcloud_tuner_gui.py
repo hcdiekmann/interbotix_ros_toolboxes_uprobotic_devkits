@@ -144,7 +144,7 @@ class PointCloudTunerGui(QWidget):
             name='Z min [m]',
             set_func=self.pc_inf.set_z_filter_min,
             get_func=self.pc_inf.get_z_filter_min,
-            min_val=0.2,
+            min_val=0.05,
             max_val=1.5,
             display=self.doublespinbox_cropbox_zmin,
             slider=self.hslider_cropbox_zmin,
